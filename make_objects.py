@@ -8,11 +8,11 @@ def read_drugs(file):
     o.readline()  # header
     for line in o:
         line = line.strip().split('\t')
-        id = line[0]
+        dbid = line[0]
         name = line[1]
         groups = line[3].split('|')
         categories = line[5].split('|')
-        drugs[id] = objects.Drug(id, name, groups, categories)
+        drugs[dbid] = objects.Drug(dbid, name, groups, categories)
     return drugs
 
 
@@ -24,7 +24,7 @@ def read_proteins(file, drugs):
     o.readline()  # header
     for line in o:
         line = line.strip().split('\t')
-        id = line[2]
+        upid = line[2]
         organism = line[4]
         if organism.strip()[-1] == ')':
             org = organism.split(' ')
@@ -36,8 +36,8 @@ def read_proteins(file, drugs):
                     break
         category = line[1]
         drug = drugs[line[0]]
-        protein = objects.Protein(id, organism)
-        proteins[id] = protein
+        protein = objects.Protein(upid, organism)
+        proteins[upid] = protein
         edge = objects.Edge(drug, protein, category)
         edges.append(edge)
         drug.add_edge(edge)
