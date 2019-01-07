@@ -12,9 +12,9 @@ def read_drugs(file):
 		name = line[1]
 		groups = line[3].split('|')
 		try:
-			categories = line[5].split('|')
+			categories = line[4].split('|')
 		except IndexError:
-			categories = 'unknown'	
+			categories = ['unknown']
 		drugs[dbid] = objects.Drug(dbid, name, groups, categories)
 
 	return drugs
