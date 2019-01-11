@@ -1,31 +1,66 @@
 
-import requests
+#import requests
+import xml.etree.ElementTree as ET
+from objects import *
+
+def parse(xml_path):
+	xml_file =  open(xml_path,'r')
+	tree = ET.iterparse(xml_file,events=('start','end'))
 
 
+	ns = '{http://www.drugbank.ca}'
 
-class Uniprot:
-    BASE = 'http://www.uniprot.org'
-    KB_ENDPOINT = '/uniprot/'
-    TOOL_ENDPOINT = '/uploadlists/'
-    #cols: separated by commas, no space
-    def query(q_str,fmt='list',cols=None,random='no'):
-        params = {'query':q_str,'format':fmt,'random':random}
-        if fmt=='tab' and cols:
-            params['columns'] = cols
-        return requests.get(Uniprot.BASE + Uniprot.KB_ENDPOINT,params=params)
-    
-    def retrieve(UPIDs,source_fmt='ACC+ID', output_fmt='fasta',cols=None):
-        ID_str = ' '.join(UPIDs)
-        params = {'query':ID_str,
-                 'from':source_fmt,
-                 'to':'ACC',
-                 'format':output_fmt}
-        if output_fmt=='tab' and cols:
-            params['columns'] = cols
-        
-        return requests.get(Uniprot.BASE+Uniprot.TOOL_ENDPOINT,params=params)
-    
-    def parse(data):
-        pass
-        
+	rows = []
+	drug = None
+	drugs = {}
+	proteins = {}
 
+	for event,element in tree:
+		if event == 'start' and element.tag == ns + 'drug' and not drug:
+			drug = element
+		elif event == 'end' and element.tag == ns + 'drug' and element is drug:
+			dbid = drug.findtext(ns + "drugbank-id[@primary='true']")
+			name = drug.findtext(ns + "name")
+			groups = [group.text for group in drug.findall("{ns}groups/{ns}group".format(ns = ns))]
+			classification = drug.findtext("{ns}classification/{ns}direct-parent".format(ns = ns))
+			patents = [date.text for date in drug.findall("{ns}patents/{ns}patent/{ns}approved".format(ns = ns))]
+			if len(patents) == 0:
+				patent_date = None
+			else:
+				patent_date = min(patents, key=lambda date: int(''.join(date.split('-'))))
+			d = Drug(dbid,name,groups,classification,patent_date)
+			drugs[dbid] = d
+			
+			#Proteins
+			for category in ['target', 'enzyme', 'carrier', 'transporter']:
+				
+				targets = drug.findall('{ns}{cat}s/{ns}{cat}'.format(ns=ns, cat=category))
+				for t in targets:
+					polypeptides = t.findall('{ns}polypeptide'.format(ns=ns))
+					for polyp in polypeptides:
+						upid = polyp.findtext("{ns}external-identifiers/{ns}external-identifier[{ns}resource='UniProtKB']/{ns}identifier".format(ns=ns))           
+
+						if upid not in proteins:
+							name = polyp.findtext(ns + "name")
+							location = polyp.findtext(ns + 'cellular-location')
+							bio_processes = set([process.text for process in polyp.findall(
+								"{ns}go-classifiers/{ns}go-classifier[{ns}category='process']/{ns}description".format(ns=ns))])
+							
+							proteins[upid] = Protein(upid,name,location,bio_processes)
+						
+						d.edges.append((category,proteins[upid]))
+					if len(polypeptides)==0:
+						d.edges.append((category,t.findtext(ns + "name")))
+
+			drug.clear()
+			drug = None
+	xml_file.close()
+	return drugs,proteins
+
+def write_tsv(drug_list,filename):
+
+	f = open(filename,'w')
+	for drug in drug_list:
+		for edge in drug.edges:
+			target = edge[1] if isinstance(edge[1],str) else edge[1].upid
+			f.write('\t'.join([drug.upid,edge[0],edge[1].upid])+'\n')
