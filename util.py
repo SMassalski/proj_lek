@@ -22,7 +22,9 @@ def parse(xml_path):
 			dbid = drug.findtext(ns + "drugbank-id[@primary='true']")
 			name = drug.findtext(ns + "name")
 			groups = [group.text for group in drug.findall("{ns}groups/{ns}group".format(ns = ns))]
-			classification = drug.findtext("{ns}classification/{ns}direct-parent".format(ns = ns))
+			levels = ['kingdom','superclass','class','subclass','direct-parent']
+			classification = [drug.findtext("{ns}classification/{ns}{level}".format(ns = ns,level = level)) for level in levels]
+			
 			patents = [date.text for date in drug.findall("{ns}patents/{ns}patent/{ns}approved".format(ns = ns))]
 			if len(patents) == 0:
 				patent_date = None
@@ -50,7 +52,8 @@ def parse(xml_path):
 						
 						d.edges.append((category,proteins[upid]))
 					if len(polypeptides)==0:
-						d.edges.append((category,t.findtext(ns + "name")))
+						name = t.findtext(ns + "name")
+						d.edges.append((category,name))
 
 			drug.clear()
 			drug = None
@@ -60,7 +63,9 @@ def parse(xml_path):
 def write_tsv(drug_list,filename):
 
 	f = open(filename,'w')
+	f.write('\t'.join(['drug','type','target'])+'\n')
 	for drug in drug_list:
 		for edge in drug.edges:
 			target = edge[1] if isinstance(edge[1],str) else edge[1].upid
-			f.write('\t'.join([drug.upid,edge[0],edge[1].upid])+'\n')
+			f.write('\t'.join([drug.dbid,edge[0],target])+'\n')
+	f.close()
