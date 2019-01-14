@@ -9,10 +9,10 @@ def superclasses(drugs):
     cdrugs = {}
     ctargets = {}
     for drug in drugs.values():
-        if drug.classification is None:
+        if not drug.classification:
             cc = 'None'
         else:
-            cc = drug.classification
+            cc = drug.classification[1]
         if cc not in camount:
             camount[cc] = 1
         else:
