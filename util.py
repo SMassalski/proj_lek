@@ -22,7 +22,7 @@ def parse(xml_path):
 			dbid = drug.findtext(ns + "drugbank-id[@primary='true']")
 			name = drug.findtext(ns + "name")
 			groups = [group.text for group in drug.findall("{ns}groups/{ns}group".format(ns = ns))]
-			classification = drug.findtext("{ns}classification/{ns}direct-parent".format(ns = ns))
+			classification = drug.findtext("{ns}classification/{ns}superclass".format(ns = ns))
 			patents = [date.text for date in drug.findall("{ns}patents/{ns}patent/{ns}approved".format(ns = ns))]
 			if len(patents) == 0:
 				patent_date = None
@@ -57,10 +57,11 @@ def parse(xml_path):
 	xml_file.close()
 	return drugs,proteins
 
+
 def write_tsv(drug_list,filename):
 
 	f = open(filename,'w')
 	for drug in drug_list:
 		for edge in drug.edges:
 			target = edge[1] if isinstance(edge[1],str) else edge[1].upid
-			f.write('\t'.join([drug.upid,edge[0],edge[1].upid])+'\n')
+			f.write('\t'.join([drug.dbid,edge[0],target])+'\n')
