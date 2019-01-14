@@ -1,0 +1,206 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx}
+\usepackage[colorlinks]{hyperref}
+\usepackage[toc,page]{appendix}
+\usepackage[utf8]{inputenc} 
+\usepackage[polish]{babel}
+\usepackage[T1]{fontenc}
+% Use wide margins, but not quite so wide as fullpage.sty
+\marginparwidth 0.5in 
+\oddsidemargin 0.25in 
+\evensidemargin 0.25in 
+\marginparsep 0.25in
+\topmargin 0.25in 
+\textwidth 6in \textheight 8 in
+% That's about enough definitions
+
+
+\begin{document}
+\author{Marlena Osipowicz, Stanisław Massalski}
+\title{Systems pharmacology using data deposited in Drugbank}
+\maketitle
+
+
+
+\section{Wstęp}
+
+
+\section{Materiały}
+
+W projekcie korzystano z bazy \textbf{Drugbank} (\textit{www.drugbank.ca}) zawierającej informacje o lekach i związkach z którymi oddziałują (ich targetach). Baza ta pozwala stworzyć sieć powiązań typu lek-cel, ale również dostarcza wiele informacji, między innymi na temat struktury leku (atrybut \textit{classification} informujący o typie związku chemicznego) jak również o dacie uzyskania patentu. Inną pomocną informacją jest ta mówiąca o statusie leku, czyli o tym, czy dany lek został zatwierdzony, wycofany, zabroniony bądź czy jest lekiem eksperymentalnym. Dostpęna jest również baza targetów leków - ich lokalizacji komórkowej bądź procesów w jakich uczestniczą.
+\newline
+Do analizy informacji z bazy \textbf{Drugbank} korzystano głównie z języka programowania Python. Biblioteki wykorzystane na różnych etapach analizy to: \texttt{xmltodict} (parsowanie pliku xml), \texttt{Networkx} (obliczanie parametrów sieci), \texttt{numpy}, \texttt{matplotlib} (tworzenie wykresów), \texttt{openbabel} (obliczanie podobieństwa związków chemicznych).
+
+
+\section{Metody}
+
+\subsection{Parsowanie danych pobranych z Drugbank}
+
+Parsowanie danych z pliku typu xml nie było zadaniem oczywistym, gdyż plik był dosyć duży co uniemożliwiało wczytanie go w całości.
+
+\subsection{Tworzenie sieci interakcji}
+
+Sieć interakcji tworzona jest na podstawie obiektów wczytanych z pliku xml (leki z listą krawędzi, targety) o interesujących własnościach bądź atrybutach. W celu wyliczenia podstawowych parametrów sieci, za pomocą biblioteki \texttt{networkx} tworzony jest graf. Skrypt wykorzystany do tworzenia sieci oraz wyliczania jej parametrów można znaleźć w pliku \textit{/skrypty/network\_analysis.py}.
+
+\subsection{Klasyfikacja leków}
+
+W bazie \textbf{Drugbank} do każdego leku przypisano informacje na temat jego taksonomii - klasyfikacji opartej na rodzaju związku chemicznego. Na podstawie tej informacji każdy z leków został przypisany do klasy związków (ustalonej na podstawie atrybutu \textit{superclass} w bazie). Następnie zbadano cechy każdej z podgrup leków, należących do tej samej klasy. Sprawdzono czy któraś z klas preferuje jakiś rodzaj celów (target, enzym, transporter, nośnik) oraz czy wpływa istotnie na średni stopień węzłów. Skrypt wykorzystany w tej części analizy znajduje się w \textit{/skrypty/class.py}.
+
+\subsection{Podobieństwo leków}
+
+\subsection{Interakcje pomiędzy lekami}
+
+\subsection{Analiza lokalizacji komórkowej celów leków}
+
+Targety leków są zlokalizowane w różnych częściach komórki, bądź też poza nią. Obecności informacji na ten temat w bazie \textbf{Drugbank} umożliwiła analizę zależności lokalizacji celów w zależności od parametrów leku. Skupiono się na dacie patentu leki, na tym czy istnieje jakaś zależność pomiędzy czasem wprowadzenia preparatu na rynek a miejscem jego działania w komórce. W tym celu przeanalizowano stworzoną sięc lek-cel. Skrypt wykorzystany w tej części zadania znajduje się w pliku \textit{/skrypty/date\_cell.py}.
+
+\section{Wyniki i dyskusja}
+
+\subsection{Podstawowe parametry sieci lek-cel}
+
+Sieć interakcji stworzona na podstawie bazy Drugbank składa się z 16903 wierzchołków (na które składa się 11922 leków oraz 4981 celów na które leki oddziałują) oraz z 28401 krawędzi reprezentujących oddziaływania pomiędzy związkami. Podstawowe statystyki sieci zostały przedstawione z tabeli \ref{t:stats}.
+
+\begin{table}[h!]
+\begin{center}
+\caption{Podstawowe parametry sieci lek-cel.}
+\label{t:stats}
+\begin{tabular}{rl}
+
+	Liczba wszystkich węzłów: & 16903\\
+	Liczba leków: & 11922\\
+	Liczba celów: & 4981\\
+	Izolowane węzły: & 4137\\
+	Średni stopień węzłów: & 3.44\\
+	Średni stopień leków: & 2.38\\
+	Średni stopień celów: & 6.21\\
+	''Betweeness centrality'': & 0.0003\\
+	Liczba węzłów w GC: & 11466\\
+	Średnia długość ścieżki: & 5.88\\
+	Współczynnik klasteryzacji: & 0.0\\
+	''Modularity index'': & \\
+	Gęstość sieci: & 0.00034\\
+	Entropia sieci: & 1.898\\
+
+\end{tabular}
+\end{center}
+\end{table}
+
+Rozważając tylko węzły reprezentujące leki można zauważyć, że ich średni stopień jest niższy niż dla całej sieci. Wydaje się więc, że leki są średnio dosyć specyficzne. Potwierdza to ilość leków powiązanych z jednym tylko celem - jest ich 4365. Leków o stopniu mniejszym bądź równym 3 jest aż 10140 - stanowi to aż 85\% wszystkich z nich.
+
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{degree_dist.png}
+\caption{Rozkład stopni węzłów dla sieci.}
+\label{fig:degree_dist}
+\end{center}
+\end{figure}
+
+\subsection{Sieci dla subtypów celów}
+
+Cele leków można podzielić na podgrupy zależnie od funkcji jaką pełnią względem cząsteczki leku. W bazie \textbf{Drugbank} 
+
+\begin{table}[h!]
+\begin{center}
+\caption{Podstawowe parametry sieci lek-cel.}
+\label{t:stats_target}
+\begin{tabular}{l|c|c|c|c}
+
+	Statystyka & Cała sieć & Carriers & Transporters & Enzymes\\
+	\hline
+	Liczba wszystkich węzłów & 16903 & 490 & 1032 & 1973\\
+	Liczba leków & 11922 & 404 & 832 & 1600\\
+	Liczba celów & 4981 & 86 & 200 & 373\\
+	Izolowane węzły & 4137 & 0 & 0 & 0\\
+	Średni stopień węzłów & 3.44 & 2.39 & 4.99 & 4.98\\
+	Średni stopień dla leków & 2.38 & 1.45 & 3.09 & 3.07\\
+	Średni stopień dla celów & 6.21 & 6.82 & 12.87 & 13.17\\
+	''Betweeness centrality'' & 0.0003 & 0.004 & 0.002 & 0.001\\
+	Liczba węzłów w GC & 11466 & 447 & 921 & 1817\\
+	Średnia długość ścieżki & 5.88 & 3.50 & 3.63 & 3.68\\
+	Współczynnik klasteryzacji & 0.0 & 0.0 & 0.0 & 0.0\\
+	''Modularity index'': & \\
+	Gęstość sieci & 0.00034 & 0.0049 & 0.0048 & 0.002\\
+	Entropia sieci & 1.898 & 1.00 & 2.05 & 1.94\\
+
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsection{Sieci dla subtypów leków}
+
+\begin{table}[h!]
+\caption{Podstawowe parametry sieci lek-cel.}
+\label{t:stats_drug}
+\begin{tabular}{l|c|c|c|c|c|c}
+
+	Statystyka & Cała sieć & Experimental & Approved & Investigational & Illicit & Withdrawn\\
+	\hline
+	Liczba wszystkich węzłów & 16903 & 8394 & 6690 & 6604 & 347 & 606\\
+	Liczba leków & 11922 & 5764 & 3729 & 3920 & 205 & 252\\
+	Liczba celów & 4981 & 2630 & 2961 & 2684 & 142 & 354\\
+	Izolowane węzły & 4137 & 79 & 104 & 1926 & 1447 & 1107\\
+	Średni stopień węzłów & 3.44 & 2.12 & 5.27 & 3.40 & 5.62 & 3.12\\
+	Średni stopień dla leków & 2.38 & 1.54 & 4.72 & 2.87 & 4.76 & 3.75\\
+	Średni stopień dla celów & 6.21 & 3.38 & 5.95 & 4.19 & 6.87 & 2.67\\
+	''Betweeness centrality'' & 0.0003 & 0.0005 & 0.0001 & 0.0007 & 0.0125 & 0.0049\\
+	Liczba węzłów w GC & 11466 & 5731 & 5101 & 4328 & 240 & 420\\
+	Średnia długość ścieżki & 5.88 & 7.60 & 4.82 & 5.16 & 4.10 & 5.15\\
+	Współczynnik klasteryzacji & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0\\
+	''Modularity index'': & \\
+	Gęstość sieci & 0.00034 & 0.0003 & 0.0012 & 0.001 & 0.03 & 0.0065\\
+	Entropia sieci & 1.898 & 1.29 & 2.42 & 2.02 & 2.64 & 1.91\\
+
+\end{tabular}
+\end{table}
+
+\subsection{Klasyfikacja leków}
+
+Pierwszym krokiem w analizie leków pod kątem ich klasyfikacji było sprawdzenie czy któraś z klas jest preferowana przez jakiś subtyp targetów (zobacz wykres \ref{fig:class_subtype}).
+
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{superclasses_plot.png}
+\caption{Wykres przedstawia ilość powiązań z celami różnego typu (w zależności od koloru słupka) dla leków należących do różnych klas (każdy słupek to osobna klasa).}
+\label{fig:class_subtype}
+\end{center}
+\end{figure}
+
+Na podstawie powyższego histogramu ciężko wysnuć jednoznaczne wnioski na temat poszczególnych klas leków. Najwięcej leków należy do klasy organicznych związków heterocyklicznych oraz do benzenoidów (czyli wielopierścieniowych węglowodorów aromatycznych). Leki z tych dwóch klas względnie często (w porównaniu do innych klas) oddziałują z enzymami. Może mieć to związek z ich
+
+Następnie zbadano średni stopień węzłów w każdej z grup (zobacz wykres \ref{fig:class_and}). Na podstawie wykresu można stwierdzić, że leki sklasyfikowane jako jednorodne związki metali (\textit{homogeneous metal compounds}) są znacznie bardziej promiskuitywne niż średnia dla całej sieci. Z kolei najbardziej specyficzną grupą leków jest organiczne 1,3-dipolarne 
+
+\begin{figure}[h!]
+\begin{center}
+\includegraphics[width=12cm]{class_and.png}
+\caption{Wykres przedstawia średni stopień węzłów z każdej podgrupy (w zależności od klasy do której należą). Przerywana linia symbolizuje średni stopień węzłów dla sieci zbudowanej na podstawie wszystkich węzłów.}
+\label{fig:class_and}
+\end{center}
+\end{figure}
+
+\subsection{Huby sieci}
+
+Huby to takie węzły sieci, których stopień jest równy bądź wyższy od stopnia 95\% wszystkich węzłów. W rozważanej sieci lek-cel takich węzłów jest 855 (zobacz tabelę \ref{t:hubs}).
+\begin{table}[h]
+\begin{center}
+\caption{Parametry hubów sieci.}
+\label{t:hubs}
+\begin{tabular}{rl}
+
+	Liczba wszystkich hubów: & 855\\
+	Liczba leków-hubów: & 462\\
+	Liczba celów-hubów: & 393\\
+	Maksymalny stopień huba: & 919\\
+	Minimalny stopień huba: & 13\\
+	
+
+\end{tabular}
+\end{center}
+\end{table}
+
+
+
+\subsection{Analiza lokalizacji komórkowej celów leków}
+
+Na pierwszy rzut oka ciężko dopatrzyć się wyraźnych trendów związanych z lokalizacją
+
+\end{document}
