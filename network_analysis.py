@@ -1,18 +1,21 @@
 import networkx as nx
-import util
+import parse
 import numpy as np
 from collections import Counter
 import math
 import matplotlib.pylab as plt
-import objects
 
 
 def node_degree(drugs):
+    """
+    Printing basic statistics about average node degree of network and about its hubes.
+    :param drugs: (dict) keys are drugs IDs, values are drugs objects. It is an output of parse.parse function.
+    :return: None
+    """
+
     ddegrees = []
     pdegrees = {}
-    oneedge = []
-    fewedges = []
-    isolated = 0
+    oneedge, fewedges, isolated = 0, 0, 0
     for drug in drugs.values():
         if len(drug.edges) == 0:
             isolated += 1
@@ -24,9 +27,9 @@ def node_degree(drugs):
             else:
                 pdegrees[protein] += 1
         if len(drug.edges) == 1:
-            oneedge.append(drug)
+            oneedge += 1
         if len(drug.edges) < 4:
-            fewedges.append(drug)
+            fewedges += 1
         ddegrees.append(len(drug.edges))
 
     print('Number of nodes = %d + %d' % (len(drugs), len(pdegrees)))
@@ -58,20 +61,16 @@ def node_degree(drugs):
     print('Number of drugs with only one connection = %d' % len(oneedge))
     print('Number of drugs with less than 4 connections = %d' % len(fewedges))
 
-    return ddegrees, pdegrees, drughubs, prothubs, hubsvalues
-
-
-def plot_degree_dist(counter):
-
-    deg, cnt = zip(*counter.items())
-    plt.bar(deg, cnt)
-    plt.title("Degree distribution", fontsize=20)
-    plt.ylabel('Number of nodes', fontsize=12)
-    plt.xlabel('Degree', fontsize=12)
-    plt.show()
+    return None
 
 
 def count_stats(drugs):
+    """
+    Counting and printing statistics of network based on given drugs list.
+    :param drugs: (dict) keys are drugs IDs, values are drugs objects. It is an output of parse.parse function.
+    :return: None
+    """
+
     # Average node degree, statistics of hubs
     node_degree(drugs)
 
@@ -110,7 +109,6 @@ def count_stats(drugs):
 
     # Degree distribution, network entropy
     counter = Counter(list(dict(nx.degree(G)).values()))
-    plot_degree_dist(counter)
     distribution = {}
     for k in counter.keys():
         distribution[k] = counter[k] / nx.number_of_nodes(G)
@@ -120,26 +118,35 @@ def count_stats(drugs):
     entropy *= -1
     print('Network entropy: %f' % entropy)
 
-    # Modularity Index
-    # modularity = nx.modularity_matrix(G)
-    # mindex = np.trace(modularity) - sum((modularity ** 2).ravel())
-    # print('Modularity index: %f' % mindex)
+    return None
 
 
 def target_subtype(drugs, type):
+    """
+    Returning drugs from given set with edges only of the given type.
+    :param drugs: (dict) keys are drugs IDs, values are drugs objects. It is an output of parse.parse function.
+    :param type: (str) name of the group of drugs.
+    :return subdrugs: (dict) keys are drugs IDs, values are drugs objects. Contains only drugs with edges of the given type.
+    """
 
     subdrugs = {}
     for drug in drugs.values():
         for e in drug.edges:
             if e[0] == type:
                 if drug.name not in subdrugs:
-                    subdrugs[drug.name] = objects.Drug(drug.dbid, drug.name, drug.groups, drug.classification, drug.patent_date)
+                    subdrugs[drug.name] = parse.Drug(drug.dbid, drug.name, drug.groups, drug.classification, drug.patent_date)
                 subdrugs[drug.name].edges.append(e)
 
     return subdrugs
 
 
 def drug_subtype(drugs, type):
+    """
+    Returning drugs which belong to given group, from the set of given drugs.
+    :param drugs: (dict) keys are drugs IDs, values are drugs objects. It is an output of parse.parse function.
+    :param type: (str) name of the group of drugs.
+    :return subdrugs: (dict) keys are drugs IDs, values are drugs objects. Contains only drugs belonging to given group.
+    """
 
     subdrugs = {}
     for drug in drugs.values():
@@ -148,22 +155,63 @@ def drug_subtype(drugs, type):
     return subdrugs
 
 
-drugs, proteins = util.parse('/home/marni/Dokumenty/projektowanie_lekow/full_database.xml')
+drugs, proteins = parse.parse('/home/marni/Dokumenty/projektowanie_lekow/full_database.xml')
 
 # statistics of all network
-# count_stats(drugs)
+count_stats(drugs)
 
 # statistics of subtype of targets
-'''
 for type in ['carrier', 'transporter', 'enzyme']:
     print('\n%s-based network' % type)
     count_stats(target_subtype(drugs, type))
-'''
+
 
 # Statistics of subtype of drugs
 for type in ['experimental', 'approved', 'investigational', 'illicit', 'withdrawn']:
     print('\nnetwork based on %s drugs' % type)
     count_stats(drug_subtype(drugs, type))
 
+# Plot degree distribution bar chart
+protein = {}
+dcounter = {}
+for drug in drugs.values():
+    if len(drug.edges) not in dcounter:
+        dcounter[len(drug.edges)] = 1
+    else:
+        dcounter[len(drug.edges)] += 1
+    for edge in drug.edges:
+        target = edge[1] if isinstance(edge[1], str) else edge[1].upid
+        if target not in protein:
+            protein[target] = 1
+        else:
+            protein[target] += 1
 
+pcounter = {}
+for p in protein.values():
+    if p not in pcounter:
+        pcounter[p] = 1
+    else:
+        pcounter[p] += 1
 
+drugh = []
+proteinh = []
+maks = max(max(dcounter.keys()), max(pcounter.keys()))
+
+for i in range(maks+1):
+    if i in dcounter:
+        drugh.append(dcounter[i])
+    else:
+        drugh.append(0)
+    if i in pcounter:
+        proteinh.append(pcounter[i])
+    else:
+        proteinh.append(0)
+
+ind = [i for i in range(maks+1)]
+plt.bar(ind, drugh, label='Drugs')
+plt.bar(ind, proteinh, bottom=drugh, label='Targets')
+plt.legend()
+plt.title('Node degree distribution', fontsize=20)
+plt.ylabel('Number of nodes', fontsize=12)
+plt.xlabel('Degree', fontsize=12)
+plt.show()

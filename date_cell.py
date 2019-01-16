@@ -1,8 +1,9 @@
 import matplotlib.pylab as plt
-import util
+import parse
 
 
 def plot_date_location(drugs, proteins, normalised=False, linear=False):
+
     loc = set()
     for p in proteins.values():
         loc.add(p.subcell_location)
@@ -113,7 +114,7 @@ def plot_date_location(drugs, proteins, normalised=False, linear=False):
     plt.show()
 
 
-drugs, proteins = util.parse('/home/marni/Dokumenty/projektowanie_lekow/full_database.xml')
+drugs, proteins = parse.parse('/home/marni/Dokumenty/projektowanie_lekow/full_database.xml')
 
 # Plot bar chart
 plot_date_location(drugs, proteins)

@@ -1,4 +1,4 @@
-import util
+import parse
 import matplotlib.pylab as plt
 import numpy as np
 
@@ -76,6 +76,7 @@ def plot_classes(ctargets):
 
 
 def plot_classdeg(cdrugs, average):
+
     cand = {}
     for c in cdrugs.keys():
         deg = 0
@@ -93,7 +94,7 @@ def plot_classdeg(cdrugs, average):
     plt.show()
 
 
-drugs, proteins = util.parse('/home/marni/Dokumenty/projektowanie_lekow/full_database.xml')
+drugs, proteins = parse.parse('/home/marni/Dokumenty/projektowanie_lekow/full_database.xml')
 camount, cdrugs, ctargets = superclasses(drugs)
 plot_classes(ctargets)
 plot_classdeg(cdrugs, 3.44)
