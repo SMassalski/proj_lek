@@ -2,7 +2,7 @@
 
 Semi-semester project from subject "Drug design", at the second-cycle studies, major "Bioinformatics and systems biology", University of Warsaw.
 
-Instructions for the task are in file named projekty_syspharm.pdf.
+Instructions for the task are in the file named projekty_syspharm.pdf.
 
 Final report of our analysis is in the file raport.pdf.
 
